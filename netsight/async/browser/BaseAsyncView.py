@@ -1,5 +1,4 @@
 from copy import deepcopy
-import json
 from operator import isMappingType
 from cStringIO import StringIO
 import threading
@@ -14,7 +13,11 @@ from ZPublisher.HTTPRequest import HTTPRequest
 from ZPublisher.HTTPResponse import HTTPResponse
 from ZPublisher.Publish import publish, mapply
 
-
+try:
+    import json
+except ImportError:
+    import simplejson as json
+    
 try:
     from plone.uuid.interfaces import IUUIDGenerator
     # Do it with a lambda to defer execution of getUtility.

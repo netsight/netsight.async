@@ -172,6 +172,19 @@ limit. This also means an extra connection is opened to the ZODB beyond
 the normal connection limit which may cause a warning to be shown in
 either the console or log files.
 
+Dependencies
+============
+
+ - Products.Five>=1.2
+ 
+ - zope.component>=3.4.0
+ 
+ - zope.i18n>=3.4.0
+ 
+ - zope.i18nmessageid>=3.4.0
+ 
+ - Zope>=2.8.0
+
 Contributions
 =============
 
