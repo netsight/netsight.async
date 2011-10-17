@@ -160,9 +160,6 @@ class BaseAsyncView(BrowserView):
         # naughty but necessary for now.
         t = threading.Thread(target=process_wrapper, name=name, kwargs=setup)
         
-        # We don't want them holding up the system if we want to quit
-        t.daemon = True
-        
         getProcessRegistry()[process_id] = {'thread': t,
                                             'completed': False,
                                             'result': None}
