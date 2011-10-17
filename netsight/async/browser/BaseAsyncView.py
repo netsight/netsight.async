@@ -81,6 +81,7 @@ def process_wrapper(pid, request_body, request_environ):
         
     response = HTTPResponse(stdout=StringIO(), stderr=StringIO())
     request = HTTPRequest(StringIO(request_body), request_environ, response)
+    request.set('process_id', pid)
     
     # Run
     try:
@@ -125,9 +126,17 @@ class BaseAsyncView(BrowserView):
         process_id = uid_generator()
         
         # Copy the request
-        request_environ = deepcopy(self.context.REQUEST.environ)
-        self.context.REQUEST.stdin.seek(0)
-        request_body = self.context.REQUEST.stdin.read()
+        if hasattr(self.context.REQUEST, 'environ'):
+            request_environ = deepcopy(self.context.REQUEST.environ)
+        elif hasattr(self.context.REQUEST, '_environ'):
+            request_environ = deepcopy(self.context.REQUEST._environ)
+        else:
+            request_environ = {}
+        if hasattr(self.context.REQUEST, 'stdin'):
+            self.context.REQUEST.stdin.seek(0)
+            request_body = self.context.REQUEST.stdin.read()
+        else:
+            request_body = ''
         
         # Pass as little from the current thread to the new thread as
         # possible. Too easy to get lost in ZODB & transaction hell

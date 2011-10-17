@@ -22,11 +22,11 @@
   <div metal:fill-slot="main"
        tal:define="process_id request/process_id|options/process_id|nothing;
                    progress python:view.completed(process_id);
-                   has_progress python:progress not in (True, False)">
+                   has_progress python:str(progress) not in ('True', 'False')">
     <h1 i18n:translate="processing_title">Processing...</h1>
     <p>
-      <span id="progress" i18n:translate="percentage_completion">
-        <span tal:condition="has_progress" tal:omit-tag="" tal:content="progress" i18n:name="percentage" />% completed...
+      <span id="progress" i18n:translate="percentage_completion" tal:condition="has_progress">
+        <span tal:omit-tag="" tal:content="progress" i18n:name="percentage" />% completed...
       </span>
       <img tal:attributes="src string:${context/absolute_url}/spinner.gif" alt="" />
     </p>

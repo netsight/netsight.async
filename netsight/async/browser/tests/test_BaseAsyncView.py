@@ -1,3 +1,4 @@
+from cStringIO import StringIO
 import re
 import time
 
@@ -13,7 +14,7 @@ class TestAsyncView(BaseTestCase):
         
         from netsight.async.browser.BaseAsyncView import BaseAsyncView
         
-        class MyProcessView(BaseAsyncView):
+        class MyAsyncView(BaseAsyncView):
             
             initial_page = lambda x=None: 'foo'
             
@@ -26,7 +27,7 @@ class TestAsyncView(BaseTestCase):
                 time.sleep(3)
                 return 1
         
-        class MyProcessViewWithProgress(MyProcessView):
+        class MyAsyncViewWithProgress(MyAsyncView):
                 
             def __run__(self, process_id=None, *args, **kwargs):
                 self.set_progress(process_id, 0)
@@ -36,28 +37,46 @@ class TestAsyncView(BaseTestCase):
                 return 1
                 
         self.context = self.getPortal()
-        self.request = TestRequest(environ=dict(SERVER_URL='http://nohost',
+        self.request = TestRequest(body_instream=StringIO(),
+                                   environ=dict(SERVER_URL='http://nohost',
                                                 HTTP_HOST='nohost'))
+        self.context.REQUEST = self.request
+        
         self.request.method = "POST"
         self.request._environ['REQUEST_METHOD'] = 'POST'
         
-        self.view = MyProcessView(self.context, self.request)
-        processing_page = lambda **options: '<h1>Processing...</h1>%s%%' % \
-                                            (self.view.completed(
-                                                 options.get('process_id')),
-                                             )
+        self.view = MyAsyncView(self.context, self.request)
+        
+        def processing_page(**options):
+            completed = self.view.completed(options.get('process_id'))
+            if completed is not True and completed is not False:
+                return '<h1>Processing...</h1>%s%%' % (completed,)
+            else:
+                return '<h1>Processing...</h1>'
+            
         self.view.processing_page = processing_page
-        self.progress_view = MyProcessViewWithProgress(self.context, self.request)
+        self.progress_view = MyAsyncViewWithProgress(self.context,
+                                                     self.request)
         self.progress_view.processing_page = processing_page
+        
+        def test_publish(request, *args, **kwargs):
+            response = mock.Mock()
+            process_id = request.get('process_id')
+            response.body = self.view.__run__(process_id=process_id)
+            return response
         
         from netsight.async.browser import BaseAsyncView as view_module
         view_module.super = mock.Mock()
+        self._publish = view_module.publish
+        view_module.publish = test_publish
         
     def beforeTearDown(self):
-        from netsight.async.browser import BaseAsyncView
-        del BaseAsyncView.super
+        from netsight.async.browser import BaseAsyncView as view_module
+        del view_module.super
+        view_module.publish = self._publish
         
     def test_process_view_get(self):
+        from netsight.async.browser import BaseAsyncView
                 
         self.request.method = "GET"
         self.request._environ['REQUEST_METHOD'] = 'GET'
@@ -66,7 +85,8 @@ class TestAsyncView(BaseTestCase):
         
         self.view.initial_page = None
         
-        self.assertEqual(self.view(), processview.super().__call__()) #@UndefinedVariable
+        self.assertEqual(self.view(),
+                         BaseAsyncView.super().__call__()) #@UndefinedVariable
         
     def test_process_view_post(self):
         
@@ -79,7 +99,7 @@ class TestAsyncView(BaseTestCase):
         
         processing_uri = '%s/my_process_view/processing\?process_id=(.+)' % \
                           (self.context.absolute_url(),)
-        self.assertNotEqual(re.match(processing_uri, redirect_uri), None, "%s did not match %s" % (redirect_uri, processing_uri))
+        self.assertNotEqual(re.match(processing_uri, redirect_uri), None)
         
         process_id = re.match(processing_uri, redirect_uri).group(1)
         
@@ -104,7 +124,7 @@ class TestAsyncView(BaseTestCase):
         redirect_uri = self.view.processing(process_id)
         completed_uri = '%s/my_process_view/result\?process_id=(.+)' %\
                                (self.context.absolute_url(),)
-        self.assertNotEqual(re.match(completed_uri, redirect_uri), None, "%s did not match %s" % (redirect_uri, completed_uri))
+        self.assertNotEqual(re.match(completed_uri, redirect_uri), None)
         completed_process_id = re.match(completed_uri, redirect_uri).group(1)
         self.assertEqual(completed_process_id, process_id)
         
@@ -118,26 +138,26 @@ class TestAsyncView(BaseTestCase):
         
         from netsight.async.browser.BaseAsyncView import NoSuchProcessError
         
-        redirect_uri = self.progress_view()
+        self.view = self.progress_view
+        redirect_uri = self.view()
         
         processing_uri = '%s/my_process_view/processing\?process_id=(.+)' % \
                           (self.context.absolute_url(),)
-        self.assertNotEqual(re.match(processing_uri, redirect_uri), None, "%s did not match %s" % (redirect_uri, processing_uri))
+        self.assertNotEqual(re.match(processing_uri, redirect_uri), None)
         
         process_id = re.match(processing_uri, redirect_uri).group(1)
-        
         # Give it time to get started
         time.sleep(0.5)
         
         # Run hasn't completed immediately
-        self.assertEqual(self.progress_view.completed(process_id), 0)
+        self.assertEqual(self.view.completed(process_id), 0)
         
         # Result is None until completion
-        self.assertEqual(self.progress_view.result(process_id), None)
+        self.assertEqual(self.view.result(process_id), None)
         
         # Processing page has the correct content & doesn't try to
         # redirect to the result.
-        processing = self.progress_view.processing(process_id)
+        processing = self.view.processing(process_id)
         self.assertTrue('<h1>Processing...</h1>' in \
                         processing)
         self.assertTrue('0%' in \
@@ -147,16 +167,17 @@ class TestAsyncView(BaseTestCase):
         time.sleep(3)
         
         # Test completion flag set
-        self.assertEqual(self.progress_view.completed(process_id), 55)
+        self.assertEqual(self.view.completed(process_id), 55)
         
         # Result is None until completion
-        self.assertEqual(self.progress_view.result(process_id), None)
+        self.assertEqual(self.view.result(process_id), None)
         
         # Processing page has the correct content & doesn't try to
         # redirect to the result.
-        processing = self.progress_view.processing(process_id)
+        processing = self.view.processing(process_id)
         self.assertTrue('<h1>Processing...</h1>' in \
-                        processing, "Expected '<h1>Processing...</h1>' in '%s'" % (processing,))
+                        processing,
+                        "Expected '<h1>Processing...</h1>' in '%s'" % (processing,))
         self.assertTrue('55%' in \
                         processing, "Expected '55%%' in '%s'" % (processing,))
         
@@ -164,10 +185,10 @@ class TestAsyncView(BaseTestCase):
         time.sleep(4)
         
         # Test completion flag set
-        self.assertEqual(self.progress_view.completed(process_id), 100)
+        self.assertEqual(self.view.completed(process_id), 100)
         
         # Test processing redirects after completion
-        redirect_uri = self.progress_view.processing(process_id)
+        redirect_uri = self.view.processing(process_id)
         completed_uri = '%s/my_process_view/result\?process_id=(.+)' %\
                                (self.context.absolute_url(),)
         self.assertNotEqual(re.match(completed_uri, redirect_uri), None, "%s did not match %s" % (redirect_uri, processing_uri))
@@ -175,7 +196,7 @@ class TestAsyncView(BaseTestCase):
         self.assertEqual(completed_process_id, process_id)
         
         # Test result
-        self.assertEqual(self.progress_view.result(process_id), 1)
+        self.assertEqual(self.view.result(process_id), 1)
         
         # Test process removed after result fetched
-        self.assertRaises(NoSuchProcessError, self.progress_view.result, process_id)
+        self.assertRaises(NoSuchProcessError, self.view.result, process_id)
