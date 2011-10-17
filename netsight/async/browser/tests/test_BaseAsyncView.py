@@ -7,7 +7,7 @@ from zope.publisher.browser import TestRequest
 from netsight.async.browser.tests.base import BaseTestCase
 
 
-class TestProcessView(BaseTestCase):
+class TestAsyncView(BaseTestCase):
     
     def afterSetUp(self):
         
@@ -58,7 +58,6 @@ class TestProcessView(BaseTestCase):
         del BaseAsyncView.super
         
     def test_process_view_get(self):
-        from netsight.async.browser import BaseAsyncView
                 
         self.request.method = "GET"
         self.request._environ['REQUEST_METHOD'] = 'GET'
