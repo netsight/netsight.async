@@ -68,14 +68,16 @@ the conditions under which the process is started by overriding the
 ``initial_page`` and the ``run_process`` methods of the view.
 
 ::
-    >>> from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+    >>> from Products.Five.browser.pagetemplatefile import \
+    ...      ViewPageTemplateFile
     >>>
     >>> class MyView(BaseAsyncView):
     ...     
     ...     def run_process(self):
-    ...         return 'run' in self.request.form:
+    ...         return 'run' in self.request.form
     ...     
-    ...     initial_page = ViewPageTemplateFile('templates/my_template.pt')
+    ...     initial_page = \
+    ...         ViewPageTemplateFile('templates/my_template.pt')
     ...
     >>>
     
