@@ -171,3 +171,17 @@ extra thread is created by the Zope process, beyond the normal thread
 limit. This also means an extra connection is opened to the ZODB beyond
 the normal connection limit which may cause a warning to be shown in
 either the console or log files.
+
+Contributions
+=============
+
+You can find the source code for this project at:
+
+  http://github.com/netsight/netsight.async
+
+This product needs translations! There are only 2 strings to do, so
+this is a really quick and easy way to contribute back to the open-
+source community.
+
+Any bug fixes, new features & documentation improvements are welcome,
+just submit a pull request on github.

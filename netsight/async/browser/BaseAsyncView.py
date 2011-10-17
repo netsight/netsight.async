@@ -125,7 +125,8 @@ class BaseAsyncView(BrowserView):
             
         process_id = uid_generator()
         
-        # Copy the request
+        # Copy the request: hasattrs for differentiating between
+        # zope.publisher and ZPublisher HTTPRequests.
         if hasattr(self.context.REQUEST, 'environ'):
             request_environ = deepcopy(self.context.REQUEST.environ)
         elif hasattr(self.context.REQUEST, '_environ'):
@@ -135,6 +136,9 @@ class BaseAsyncView(BrowserView):
         if hasattr(self.context.REQUEST, 'stdin'):
             self.context.REQUEST.stdin.seek(0)
             request_body = self.context.REQUEST.stdin.read()
+        elif hasattr(self.context.REQUEST, 'bodyStream'):
+            self.context.REQUEST.bodyStream.stream.seek(0)
+            request_body = self.context.REQUEST.bodyStream.stream.read()
         else:
             request_body = ''
         
