@@ -175,8 +175,8 @@ either the console or log files.
 Dependencies
 ============
 
- - Products.Five>=1.2
- 
+ - Python>=2.4.0
+
  - zope.component>=3.4.0
  
  - zope.i18n>=3.4.0

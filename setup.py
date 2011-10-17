@@ -6,11 +6,16 @@ version = '0.0.1'
 
 requirements = [
     'setuptools',
+    'zope.component>=3.4.0',
+    'zope.i18n>=3.4.0',
+    'zope.i18nmessageid>=3.4.0',
+    'Zope2>=2.8.0',
 ]
 
 test_requirements = [
     'mock',
     'Products.PloneTestCase'
+    'zope.publisher'
 ]
 
 if sys.version_info[:3] < (2,6,0):

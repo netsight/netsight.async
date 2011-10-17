@@ -1,5 +1,5 @@
+from collections import Mapping
 from copy import deepcopy
-from operator import isMappingType
 from cStringIO import StringIO
 import threading
 import types 
@@ -65,7 +65,7 @@ def process_wrapper(pid, request_body, request_environ):
                    handle_class=None,
                    context=None, bind=0):
         
-        if not isMappingType(keyword):
+        if not isinstance(keyword, Mapping):
             keyword = {}
         keyword['process_id'] = pid
         args = (getattr(object, '__run__', object),)
