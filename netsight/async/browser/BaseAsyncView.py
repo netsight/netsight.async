@@ -8,6 +8,8 @@ import types
 from Products.Five import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from zope.component import getUtility
+from zope.i18n import translate
+from zope.i18nmessageid import MessageFactory
 from ZPublisher.HTTPRequest import HTTPRequest
 from ZPublisher.HTTPResponse import HTTPResponse
 from ZPublisher.Publish import publish, mapply
@@ -15,12 +17,14 @@ from ZPublisher.Publish import publish, mapply
 
 try:
     from plone.uuid.interfaces import IUUIDGenerator
-    uid_generator = getUtility(IUUIDGenerator)
+    # Do it with a lambda to defer execution of getUtility.
+    uid_generator = lambda: getUtility(IUUIDGenerator)()
 except ImportError:
     import uuid
     uid_generator = lambda: uuid.uuid4().hex
 
 
+_ = MessageFactory('netsight.async')
 _processRegistry = {}
 
 
@@ -111,6 +115,8 @@ class BaseAsyncView(BrowserView):
     processing_page = ViewPageTemplateFile('templates/processing.pt')
     
     def run_process(self):
+        # Returns True if the current request should trigger the
+        # __run__ method to be kicked off.
         return self.request.get('REQUEST_METHOD')=='POST'
     
     def _run(self):
@@ -207,9 +213,11 @@ class BaseAsyncView(BrowserView):
                 return json.dumps({'completed': 'ERROR'})
             else:
                 raise
+            
+        completed = process.get('completed', None)
         if (not process['thread'] or not process['thread'].is_alive()) and \
-           process.get('completed') is not True and \
-           process.get('completed') != 100:
+           completed is not True and \
+           completed != 100:
             exception = process.get('result')
             if not output_json:
                 del getProcessRegistry()[process_id]
@@ -218,9 +226,18 @@ class BaseAsyncView(BrowserView):
                 return json.dumps({'completed': 'ERROR'})
         
         if not output_json:
-            return process.get('completed')
+            return completed
         else:
-            return json.dumps({'completed': process.get('completed')})
+            if hasattr(self.context, 'portal_languages'):
+                lang = self.context.portal_languages.getPreferredLanguage()
+            else:
+                lang = 'en' 
+            progress_message = _(u'percentage_completion',
+                                 u'${percentage}% completed...',
+                                 mapping={'percentage': completed or 0})
+            return json.dumps({'completed': completed,
+                               'progress_message': translate(progress_message,
+                                                             target_language=lang)})
     
     def result(self, process_id):
         """ Get the result of the given process. If the process has not
@@ -236,6 +253,7 @@ class BaseAsyncView(BrowserView):
             raise ThreadDiedBeforeCompletionError(result)
         
         return result
+        
     
     def publishTraverse(self, request, name):
         if name in ('completed', 'processing', 'result'):

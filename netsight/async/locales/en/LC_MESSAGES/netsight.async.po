@@ -1,0 +1,8 @@
+"Project-Id-Version: netsight.async-0.0.1\n"
+"Report-Msgid-Bugs-To: support@netsight.co.uk\n"
+
+msgid "processing_title"
+msgstr "Processing..."
+
+msgid "percentage_completion"
+msgstr "${percentage}% completed..."

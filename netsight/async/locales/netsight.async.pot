@@ -1,0 +1,10 @@
+msgid ""
+msgstr ""
+"Report-Msgid-Bugs-To: support@netsight.co.uk\n"
+
+msgid "processing_title"
+msgstr "Processing..."
+
+msgid "percentage_completion"
+msgstr "${percentage}% completed..."
+

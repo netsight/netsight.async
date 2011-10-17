@@ -17,7 +17,7 @@
 			    		// nothing to do
 			    	} else {
 			    		// update progress
-			    		$('#progress').html(data['completed'] + '% completed...');
+			    		$('#progress').html(data['progress_message']);
 			    	}
 					window.setTimeout(poller, 5000);
 			    },
