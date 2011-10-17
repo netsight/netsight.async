@@ -1,0 +1,35 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      lang="en"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="netsight.async">
+      
+<head>
+  <metal:headslot fill-slot="head_slot">
+    <noscript>
+      <meta http-equiv="refresh" content="5">
+    </noscript>
+  </metal:headslot>
+  
+  <metal:javascript fill-slot="javascript_head_slot">
+    <script
+      type="text/javascript"
+      tal:attributes="src string:${context/absolute_url}/++resource++netsight.async.js/processing.js">
+    </script>
+  </metal:javascript>
+</head>
+
+<body>
+  <div metal:fill-slot="main"
+       tal:define="process_id request/process_id|options/process_id|nothing;
+                   progress python:view.completed(process_id);
+                   has_progress python:progress not in (True, False)">
+    <h1>Processing...</h1>
+    <p>
+      <span id="progress" i18n:translate="">
+        <span tal:condition="has_progress" tal:omit-tag="" tal:content="progress" i18n:name="percentage" />% completed...
+      </span>
+      <img tal:attributes="src string:${context/absolute_url}/spinner.gif" alt="" />
+    </p>
+  </div>
+</body>
+</html>

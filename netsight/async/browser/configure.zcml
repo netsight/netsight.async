@@ -1,0 +1,11 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="netsight.async">
+
+  <browser:resourceDirectory
+      name="netsight.async.js"
+      directory="js"
+      />
+      
+</configure>

@@ -1,0 +1,5 @@
+recursive-include = *.js
+recursive-include = *.pt
+recursive-include = *.rst
+recursive-include = *.xml
+recursive-include = *.zcml
