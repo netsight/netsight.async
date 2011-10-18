@@ -172,6 +172,15 @@ limit. This also means an extra connection is opened to the ZODB beyond
 the normal connection limit which may cause a warning to be shown in
 either the console or log files.
 
+Once the ``__run__`` method has started, it cannot be stopped by the
+user in any way. This a feature that subclasses may implement if
+they choose, but would be dangerous to implement in this package
+without knowledge of what the background task was doing & what cleanup
+may be required.
+
+If the user never retrieves the results from the ``__run__`` method,
+they are stored in memory until the Zope process is restarted.
+
 Dependencies
 ============
 
@@ -183,6 +192,8 @@ Dependencies
  
  - zope.i18nmessageid>=3.4.0
  
+ - zope.publisher
+ 
  - Zope>=2.8.0
 
 Contributions
@@ -193,8 +204,8 @@ You can find the source code for this project at:
   http://github.com/netsight/netsight.async
 
 This product needs translations! There are only 2 strings to do, so
-this is a really quick and easy way to contribute back to the open-
-source community.
+this is a really quick and easy way to contribute to an open-source
+project.
 
 Any bug fixes, new features & documentation improvements are welcome,
 just submit a pull request on github.
