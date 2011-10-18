@@ -25,8 +25,10 @@
                    has_progress python:str(progress) not in ('True', 'False')">
     <h1 i18n:translate="processing_title">Processing...</h1>
     <p>
-      <span id="progress" i18n:translate="percentage_completion" tal:condition="has_progress">
-        <span tal:omit-tag="" tal:content="progress" i18n:name="percentage" />% completed...
+      <span id="progress">
+        <tal:block i18n:translate="percentage_completion" tal:condition="has_progress">
+          <span tal:omit-tag="" tal:content="progress" i18n:name="percentage" />% completed...
+        </tal:block>
       </span>
       <img tal:attributes="src string:${context/absolute_url}/spinner.gif" alt="" />
     </p>
