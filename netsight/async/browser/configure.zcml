@@ -7,5 +7,10 @@
       name="netsight.async.js"
       directory="js"
       />
+
+  <browser:resourceDirectory
+      name="netsight.async.images"
+      directory="images"
+      />
       
 </configure>

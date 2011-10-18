@@ -30,7 +30,7 @@
           <span tal:omit-tag="" tal:content="progress" i18n:name="percentage" />% completed...
         </tal:block>
       </span>
-      <img tal:attributes="src string:${context/absolute_url}/spinner.gif" alt="" />
+      <img tal:attributes="src string:${context/absolute_url}/++resource++netsight.async.images/spinner.gif"" alt="" />
     </p>
   </div>
 </body>
