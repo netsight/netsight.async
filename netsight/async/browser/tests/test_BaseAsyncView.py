@@ -25,7 +25,7 @@ class TestAsyncView(BaseTestCase):
                 
             def __run__(self, *args, **kwargs):
                 time.sleep(3)
-                return 1
+                return '1'
         
         class MyAsyncViewWithProgress(MyAsyncView):
                 
@@ -34,7 +34,7 @@ class TestAsyncView(BaseTestCase):
                 time.sleep(3)
                 self.set_progress(process_id, 55)
                 time.sleep(3)
-                return 1
+                return '1'
                 
         self.context = self.getPortal()
         self.request = TestRequest(body_instream=StringIO(),
@@ -61,8 +61,13 @@ class TestAsyncView(BaseTestCase):
         
         def test_publish(request, *args, **kwargs):
             response = mock.Mock()
+            response.getStatus.return_value = 200
+            response.headers = {}
+            response.cookies = {}
             process_id = request.get('process_id')
-            response.body = self.view.__run__(process_id=process_id)
+            result = self.view.__run__(process_id=process_id)
+            response.consumeBody.return_value = result
+            response.body = result
             return response
         
         from netsight.async.browser import BaseAsyncView as view_module
@@ -129,7 +134,7 @@ class TestAsyncView(BaseTestCase):
         self.assertEqual(completed_process_id, process_id)
         
         # Test result
-        self.assertEqual(self.view.result(process_id), 1)
+        self.assertEqual(self.view.result(process_id).consumeBody(), '1')
         
         # Test process removed after result fetched
         self.assertRaises(NoSuchProcessError, self.view.result, process_id)
@@ -196,7 +201,7 @@ class TestAsyncView(BaseTestCase):
         self.assertEqual(completed_process_id, process_id)
         
         # Test result
-        self.assertEqual(self.view.result(process_id), 1)
+        self.assertEqual(self.view.result(process_id).consumeBody(), '1')
         
         # Test process removed after result fetched
         self.assertRaises(NoSuchProcessError, self.view.result, process_id)

@@ -9,6 +9,7 @@ from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.i18n import translate
 from zope.i18nmessageid import MessageFactory
+from zope.publisher.interfaces.http import IHTTPResponse
 from ZPublisher.HTTPRequest import HTTPRequest
 from ZPublisher.HTTPResponse import HTTPResponse
 from ZPublisher.Publish import publish, mapply
@@ -90,7 +91,27 @@ def process_wrapper(pid, request_body, request_environ):
     try:
         __process = BaseAsyncView._get_process(pid)
         response = publish(request, 'Zope2', [None], mapply=my_mapply)
-        __process['result'] = response.body
+        
+        # We can't just pass the response back, as the data streams will not
+        # be set up right.
+        attr = (hasattr(response, 'cookies') and 'cookies') or \
+               (hasattr(response, '_cookies') and '_cookies')
+        cookies = deepcopy(getattr(response, attr))
+        
+        if IHTTPResponse.providedBy(response):
+            __process['result'] = (response.getStatus(),
+                                   dict(response.getHeaders()),
+                                   cookies,
+                                   response.consumeBody())
+        else:
+            # Currently, ZPublisher.HTTPResponse doesn't implement
+            # IHTTPResponse, even though HTTPRequest implements
+            # IHTTPRequest.
+            __process['result'] = (response.getStatus(),
+                                   dict(response.headers),
+                                   cookies,
+                                   response.body)
+            
     except Exception, e:
         # Set result to the exception raised
         __process['result'] = e
@@ -258,15 +279,53 @@ class BaseAsyncView(BrowserView):
             successfully fetched, it cannot be fetched again.
         """
         process = self._get_process(process_id)
-        result = process.get('result', {})
+        response_details = process.get('result')
         if not process['thread'].is_alive():
             del getProcessRegistry()[process_id]
         
-        if isinstance(result, Exception):
-            raise ThreadDiedBeforeCompletionError(result)
+        if isinstance(response_details, Exception):
+            raise ThreadDiedBeforeCompletionError(response_details)
         
-        return result
+        if response_details:
+            response = self.request.response
+            
+            status, headers, cookies, body = response_details
+            response.setStatus(status)
+            
+            # Overwriting headers/cookies here is a bit crude, I have
+            # tried to use declared interface methods wherever possible
+            # but there are some omissions that have to be worked
+            # around.
+            
+            # Currently, ZPublisher.HTTPResponse doesn't implement
+            # IHTTPResponse, even though HTTPRequest implements
+            # IHTTPRequest.
+            current_headers = getattr(response, 'headers',
+                              getattr(response, '_headers',
+                              {}))
+            result_headers = dict([(k.lower(), v) for k, v in headers.items()])
+            for h in set(current_headers.keys() + result_headers.keys()):
+                if h not in headers and h in current_headers:
+                    # no interface-friendly way to unset headers anyway.
+                    del current_headers[h]
+                else:
+                    response.setHeader(h, result_headers[h])
+            
+            # no interface-friendly way to enumerate response cookies
+            # or unset cookies.
+            attr = (hasattr(response, 'cookies') and 'cookies') or \
+                   (hasattr(response, '_cookies') and '_cookies')
+            setattr(response, attr, cookies)
+            
+            if IHTTPResponse.providedBy(response):
+                response.setResult(body)
+            else:
+                response.setBody(body)
+            
+            return response
         
+        else:
+            return None
     
     def publishTraverse(self, request, name):
         if name in ('completed', 'processing', 'result'):
