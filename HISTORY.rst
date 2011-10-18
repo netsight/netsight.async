@@ -1,6 +1,6 @@
 Changelog
 =========
 
-0.0.1 - (release being compiled)
+1.0.0 - (release being compiled)
 --------------------------------
 Initial release.
