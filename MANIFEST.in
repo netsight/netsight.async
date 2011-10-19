@@ -1,4 +1,6 @@
 recursive-include *.js
+recursive-include *.po
+recursive-include *.pot
 recursive-include *.pt
 recursive-include *.rst
 recursive-include *.xml
