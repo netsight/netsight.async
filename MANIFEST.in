@@ -1,7 +1,7 @@
+recursive-include netsight/async *.zcml
 recursive-include netsight/async/browser/images *
 recursive-include netsight/async/browser/js *
 recursive-include netsight/async/browser/templates *
 recursive-include netsight/async/locales *
 recursive-include netsight/async/profiles *
 include *.rst
-recursive-include . *.zcml
