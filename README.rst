@@ -180,21 +180,21 @@ they are stored in memory until the Zope process is restarted.
 Dependencies
 ============
 
- - Python>=2.4.0
+ * Python>=2.4.0
 
- - zope.component>=3.4.0
+ * zope.component>=3.4.0
  
- - zope.i18n>=3.4.0
+ * zope.i18n>=3.4.0
  
- - zope.i18nmessageid>=3.4.0
+ * zope.i18nmessageid>=3.4.0
  
- - zope.publisher
+ * zope.publisher
  
- - Zope>=2.8.0
+ * Zope>=2.8.0
  
- The default processing page template depends on a main template being,
- provided, much like the one provided by Products.CMFPlone, however
- this may be overridden by your own view, as discussed above.
+The default processing page template depends on a main template being,
+provided, much like the one provided by Products.CMFPlone, however
+this may be overridden by your own view, as discussed above.
 
 Contributions
 =============
