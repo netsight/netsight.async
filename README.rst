@@ -161,7 +161,7 @@ method returns.
 Installation
 ============
 
-Simple add ``netsight.async`` to the ``eggs`` section of your buildout
+Simply add ``netsight.async`` to the ``eggs`` section of your buildout
 configuration. If you also plan on using the stock 'processing' page,
 you may also need to add it to the ``zcml`` section. ::
 
