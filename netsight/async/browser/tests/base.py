@@ -1,10 +1,7 @@
 from Products.Five import zcml
 from Products.Five import fiveconfigure
-from Products.PloneTestCase import PloneTestCase as ptc
-from Products.PloneTestCase.layer import onsetup
+from Testing.ZopeTestCase import PortalTestCase as ptc
 
-
-@onsetup
 def setup_product():
     fiveconfigure.debug_mode = True
     import netsight.async
@@ -13,19 +10,10 @@ def setup_product():
 
 
 setup_product()
-ptc.installPackage('netsight.async')
-ptc.setupPloneSite(
-    products=(
-        'netsight.async', 
-        ),
-    extension_profiles=(
-        'netsight.async:default',
-        ),
-    )
 
 import netsight.async
 netsight.async.initialize(None)
 
 
-class BaseTestCase(ptc.PloneTestCase):
+class BaseTestCase(ptc.PortalTestCase):
     pass

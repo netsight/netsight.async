@@ -2,11 +2,11 @@ from collections import Mapping
 from copy import deepcopy
 from cStringIO import StringIO
 import threading
-import types 
+import types
+import uuid
     
 from Products.Five import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
-from zope.component import getUtility
 from zope.i18n import translate
 from zope.i18nmessageid import MessageFactory
 from zope.publisher.interfaces.http import IHTTPResponse
@@ -19,15 +19,8 @@ try:
 except ImportError:
     import simplejson as json
     
-try:
-    from plone.uuid.interfaces import IUUIDGenerator
-    # Do it with a lambda to defer execution of getUtility.
-    uid_generator = lambda: getUtility(IUUIDGenerator)()
-except ImportError:
-    import uuid
-    uid_generator = lambda: uuid.uuid4().hex
 
-
+uid_generator = lambda: uuid.uuid4().hex
 _ = MessageFactory('netsight.async')
 _processRegistry = {}
 
