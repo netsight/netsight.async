@@ -1,7 +1,7 @@
-recursive-include *.js
-recursive-include *.po
-recursive-include *.pot
-recursive-include *.pt
-recursive-include *.rst
-recursive-include *.xml
+recursive-include netsight/async/browser/images *
+recursive-include netsight/async/browser/js *
+recursive-include netsight/async/browser/templates *
+recursive-include netsight/async/locales *
+recursive-include netsight/async/profiles *
+include *.rst
 recursive-include *.zcml
