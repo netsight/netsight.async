@@ -7,7 +7,7 @@ Introduction
 
 netsight.async provides a base browser view for the Zope Web Framework
 which enables browser requests to run in the background whilst progress
-of the request is returns to the browser.
+of the request is returned to the browser.
 
 Usage
 =====
@@ -15,7 +15,7 @@ Usage
 Basic
 -----
 
-First, subclass the BaseAsyncView class. Where you might ordinarily
+First, subclass the ``BaseAsyncView`` class. Where you might ordinarily
 write code in the ``__call__`` method of a view class, to perform some
 process, instead, place it in the ``__run__`` method. ::
 
