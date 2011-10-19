@@ -17,7 +17,7 @@ Basic
 
 First, subclass the BaseAsyncView class. Where you might ordinarily
 write code in the ``__call__`` method of a view class, to perform some
-process, instead, place it in the ``__run__`` method.::
+process, instead, place it in the ``__run__`` method. ::
 
     >>> import time
     >>> from netsight.async.browser.BaseAsyncView import BaseAsyncView
@@ -64,7 +64,7 @@ page template file specified in ZCML, this will be shown by default
 when the view is first called. If the view is POSTed to, then the
 process will be kick-started. You can change the initial template and
 the conditions under which the process is started by overriding the
-``initial_page`` and the ``run_process`` methods of the view.::
+``initial_page`` and the ``run_process`` methods of the view. ::
 
     >>> from Products.Five.browser.pagetemplatefile import \
     ...      ViewPageTemplateFile
@@ -79,7 +79,7 @@ the conditions under which the process is started by overriding the
     ...
     >>>
     
-Or you could use a method:::
+Or you could use a method::
 
     >>> class MyView(BaseAsyncView):
     ...     
@@ -94,7 +94,7 @@ has been started by overriding the processing_page method.
 If you want to call a template defined in ZCML from your ``__run__``
 method, you may pass a ``True`` value named ``no_process` to the call
 method if your ``run_process`` method would ordinarily start the
-process again.::
+process again. ::
 
     >>> class MyView(BaseAsyncView):
     ...     
@@ -141,7 +141,8 @@ Setting process progress from your task
 ---------------------------------------
 
 If you want your task to return some measure of completion you can call
-the ``set_progress`` method with the process ID and some numeric value.::
+the ``set_progress`` method with the process ID and some numeric value.
+::
 
     >>> class MyView(BaseAsyncView):
     ...    
