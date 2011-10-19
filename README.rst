@@ -196,8 +196,9 @@ Dependencies
  
  - Zope>=2.8.0
  
- The default processing page template depends on Products.CMFPlone,
- however this may be overridden by your own view, as discussed above.
+ The default processing page template depends on a main template being,
+ provided, much like the one provided by Products.CMFPlone, however
+ this may be overridden by your own view, as discussed above.
 
 Contributions
 =============

@@ -21,7 +21,9 @@ test_requirements = [
 if sys.version_info[:3] < (2,6,0):
     requirements.append('simplejson')
 
-setup(name='netsight.async',
+setup(
+      # Metadata
+      name='netsight.async',
       version=version,
       description="Provides a base view for running asynchronous "
                   "processes from Zope.",
@@ -36,12 +38,14 @@ setup(name='netsight.async',
         "Programming Language :: Python",
         ],
       keywords='Plone Zope Asynchronous Fork Process Task Browser View',
-      author='Richard Mitchell',
-      author_email='richard@netsight.co.uk',
+      author='Netsight Internet Solutions Limited',
+      author_email='info@netsight.co.uk',
+      maintainer='Richard Mitchell',
+      maintainer_email='richard@netsight.co.uk',
       url='http://www.netsight.co.uk',
-      license='TBD',
+      license='Apache 2.0',
       
-      
+      # Distribution / build data
       packages=find_packages(exclude=['ez_setup']),
       namespace_packages=['netsight'],
       include_package_data=True,
@@ -53,7 +57,7 @@ setup(name='netsight.async',
       target = plone
       """,
       
-      
+      # Dependencies
       install_requires=requirements,
       setup_requires=[],
       tests_require=test_requirements,
