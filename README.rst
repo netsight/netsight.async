@@ -195,7 +195,7 @@ instance. This introduces the following issues:
 
  * If the user never retrieves the results from the ``__run__``
    method, they are stored in memory until the Zope process is
-  restarted.
+   restarted.
 
  * The process only exists on a single Zope instance, this is fine
    as long as you are using a load balancer and enable server-affinity
