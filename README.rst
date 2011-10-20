@@ -199,11 +199,11 @@ instance. This introduces the following issues:
 
  * The process only exists on a single Zope instance, this is fine
    as long as you are using a load balancer and enable server-affinity
-   and users do not try to share progress / results of the process
+   and users do not try to share progress or results of the process
    with other users or devices.
 
- * If the Zope process is completed before the user has retrieved
-   the results of their request, the results will be lost.
+ * If the Zope process is stopped or restarted before the user has
+   retrieved the results of their request, the results will be lost.
 
 Dependencies
 ============
