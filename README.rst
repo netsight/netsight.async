@@ -187,8 +187,23 @@ they choose, but would be dangerous to implement in this package
 without knowledge of what the background task was doing & what cleanup
 may be required.
 
-If the user never retrieves the results from the ``__run__`` method,
-they are stored in memory until the Zope process is restarted.
+To be improved
+==============
+
+Currently processes are stored in memory of a particular Python
+instance. This introduces the following issues:
+
+ * If the user never retrieves the results from the ``__run__``
+   method, they are stored in memory until the Zope process is
+  restarted.
+
+ * The process only exists on a single Zope instance, this is fine
+   as long as you are using a load balancer and enable server-affinity
+   and users do not try to share progress / results of the process
+   with other users or devices.
+
+ * If the Zope process is completed before the user has retrieved
+   the results of their request, the results will be lost.
 
 Dependencies
 ============
