@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.1.1 - (2011-10-27)
+--------------------
+
+ - Fix process completion detection when progress is set to 100.
+
 1.1.0 - (2011-10-27)
 --------------------
 
