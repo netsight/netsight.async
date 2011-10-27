@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.1.0 - (release being compiled)
+1.1.0 - (2011-10-27)
 --------------------
 
  - Made Python 2.4 compatible.
