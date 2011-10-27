@@ -3,7 +3,8 @@ import re
 import time
 
 import mock
-from zope.publisher.browser import TestRequest
+from ZPublisher.HTTPRequest import HTTPRequest
+from ZPublisher.HTTPResponse import HTTPResponse
 
 from netsight.async.browser.tests.base import BaseTestCase
 
@@ -36,14 +37,16 @@ class TestAsyncView(BaseTestCase):
                 time.sleep(3)
                 return '1'
                 
-        self.context = self.getPortal()
-        self.request = TestRequest(body_instream=StringIO(),
-                                   environ=dict(SERVER_URL='http://nohost',
-                                                HTTP_HOST='nohost'))
+        self.context = self.folder
+        self.request = HTTPRequest(StringIO(),
+                                   dict(SERVER_URL='http://nohost',
+                                        HTTP_HOST='nohost'),
+                                   HTTPResponse(stdout=StringIO(), stderr=StringIO()))
+        
         self.context.REQUEST = self.request
         
         self.request.method = "POST"
-        self.request._environ['REQUEST_METHOD'] = 'POST'
+        self.request.environ['REQUEST_METHOD'] = 'POST'
         
         self.view = MyAsyncView(self.context, self.request)
         
@@ -70,21 +73,32 @@ class TestAsyncView(BaseTestCase):
             response.body = result
             return response
         
+        self._process_registry = {}
+        
+        def getTestProcessRegistry(*args, **kwargs):
+            return self._process_registry
+        
         from netsight.async.browser import BaseAsyncView as view_module
         view_module.super = mock.Mock()
         self._publish = view_module.publish
         view_module.publish = test_publish
+        self._transaction = view_module.transaction
+        view_module.transaction = mock.Mock()
+        self._getProcessRegistry = view_module.getProcessRegistry
+        view_module.getProcessRegistry = getTestProcessRegistry
         
     def beforeTearDown(self):
         from netsight.async.browser import BaseAsyncView as view_module
         del view_module.super
         view_module.publish = self._publish
+        view_module.transaction = self._transaction
+        view_module.getProcessRegistry = self._getProcessRegistry
         
     def test_process_view_get(self):
         from netsight.async.browser import BaseAsyncView
                 
         self.request.method = "GET"
-        self.request._environ['REQUEST_METHOD'] = 'GET'
+        self.request.environ['REQUEST_METHOD'] = 'GET'
         
         self.assertEqual(self.view(), 'foo')
         
@@ -134,7 +148,7 @@ class TestAsyncView(BaseTestCase):
         self.assertEqual(completed_process_id, process_id)
         
         # Test result
-        self.assertEqual(self.view.result(process_id).consumeBody(), '1')
+        self.assertEqual(self.view.result(process_id).body, '1')
         
         # Test process removed after result fetched
         self.assertRaises(NoSuchProcessError, self.view.result, process_id)
@@ -201,7 +215,7 @@ class TestAsyncView(BaseTestCase):
         self.assertEqual(completed_process_id, process_id)
         
         # Test result
-        self.assertEqual(self.view.result(process_id).consumeBody(), '1')
+        self.assertEqual(self.view.result(process_id).body, '1')
         
         # Test process removed after result fetched
         self.assertRaises(NoSuchProcessError, self.view.result, process_id)

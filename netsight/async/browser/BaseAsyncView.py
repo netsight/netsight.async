@@ -4,9 +4,11 @@ from cStringIO import StringIO
 import threading
 import types
 import uuid
-    
+
+from persistent.dict import PersistentDict
 from Products.Five import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+import transaction
 from zope.i18n import translate
 from zope.i18nmessageid import MessageFactory
 from zope.publisher.interfaces.http import IHTTPResponse
@@ -19,15 +21,10 @@ try:
 except ImportError:
     import simplejson as json
     
+from netsight.async.registry import getProcessRegistry
 
 uid_generator = lambda: uuid.uuid4().hex
 _ = MessageFactory('netsight.async')
-_processRegistry = {}
-
-
-def getProcessRegistry():
-    global _processRegistry
-    return _processRegistry
 
 
 def is_numeric(n):
@@ -52,6 +49,8 @@ class ThreadDiedBeforeCompletionError(RuntimeError):
 def process_wrapper(pid, request_body, request_environ):
     # Sets up everything we need to run a view method in a new Zope-ish
     # context, then runs it and stores the result for later retrieval.
+    
+    _process = None
 
     def my_mapply(object, positional=(), keyword={},
                    debug=None, maybe=None,
@@ -62,6 +61,7 @@ def process_wrapper(pid, request_body, request_environ):
         if not isinstance(keyword, Mapping):
             keyword = {}
         keyword['process_id'] = pid
+        
         args = (getattr(object, '__run__', object),)
         kwargs = dict(positional=positional,
                       keyword=keyword,
@@ -78,11 +78,17 @@ def process_wrapper(pid, request_body, request_environ):
         
     response = HTTPResponse(stdout=StringIO(), stderr=StringIO())
     request = HTTPRequest(StringIO(request_body), request_environ, response)
+    
     request.set('process_id', pid)
+    
+    import Zope2
+    app = Zope2.bobo_application.__bobo_traverse__(request)
+    reg = getProcessRegistry(app)
+    _process = reg.get(pid)
+    
     
     # Run
     try:
-        __process = BaseAsyncView._get_process(pid)
         response = publish(request, 'Zope2', [None], mapply=my_mapply)
         
         # We can't just pass the response back, as the data streams will not
@@ -92,31 +98,32 @@ def process_wrapper(pid, request_body, request_environ):
         cookies = deepcopy(getattr(response, attr))
         
         if IHTTPResponse.providedBy(response):
-            __process['result'] = (response.getStatus(),
-                                   dict(response.getHeaders()),
-                                   cookies,
-                                   response.consumeBody())
+            _process['result'] = (response.getStatus(),
+                                  dict(response.getHeaders()),
+                                  cookies,
+                                  response.consumeBody())
         else:
             # Currently, ZPublisher.HTTPResponse doesn't implement
             # IHTTPResponse, even though HTTPRequest implements
             # IHTTPRequest.
-            __process['result'] = (response.getStatus(),
-                                   dict(response.headers),
-                                   cookies,
-                                   response.body)
+            _process['result'] = (response.getStatus(),
+                                  dict(response.headers),
+                                  cookies,
+                                  response.body)
             
     except Exception, e:
         # Set result to the exception raised
-        __process['result'] = e
+        _process['result'] = e
         raise
     else:
         # Set completed
-        completed = __process.get('completed')
+        completed = _process.get('completed')
         if is_numeric(completed):
             completed = 100
         else:
             completed = True
-        __process['completed'] = completed
+        _process['completed'] = completed
+        transaction.commit()
     finally:
         # Clean up our extra thread.
         request.close()
@@ -174,9 +181,11 @@ class BaseAsyncView(BrowserView):
         # naughty but necessary for now.
         t = threading.Thread(target=process_wrapper, name=name, kwargs=setup)
         
-        getProcessRegistry()[process_id] = {'thread': t,
-                                            'completed': False,
-                                            'result': None}
+        getProcessRegistry(self.context)[process_id] = PersistentDict({'completed': False,
+                                                                       'result': None})
+        # Ensure we have committed in this thread before the spawned
+        # thread tries to retrieve the process record.
+        transaction.commit()
         
         t.start()
         
@@ -188,17 +197,15 @@ class BaseAsyncView(BrowserView):
         
         raise NotImplementedError
     
-    @classmethod
     def _get_process(self, process_id):
         # Internal function, used to raise an error if a process with
         # the given ID doesn't exist.
-        
-        process = getProcessRegistry().get(process_id)
+
+        process = getProcessRegistry(self.context).get(process_id)
         if not process:
             raise NoSuchProcessError
         return process
     
-    @classmethod
     def set_progress(self, process_id, percentage):
         # To be called by the running process to set its completion
         # process as a number between 0 and 100.
@@ -242,12 +249,13 @@ class BaseAsyncView(BrowserView):
                 raise
             
         completed = process.get('completed', None)
-        if (not process['thread'] or not process['thread'].is_alive()) and \
+        result = process.get('result')
+        if isinstance(result, Exception) and \
            completed is not True and \
            completed != 100:
-            exception = process.get('result')
+            exception = result
             if not output_json:
-                del getProcessRegistry()[process_id]
+                del getProcessRegistry(self.context)[process_id]
                 raise ThreadDiedBeforeCompletionError(exception)
             else:
                 return json.dumps({'completed': 'ERROR'})
@@ -273,11 +281,16 @@ class BaseAsyncView(BrowserView):
         """
         process = self._get_process(process_id)
         response_details = process.get('result')
-        if not process['thread'].is_alive():
-            del getProcessRegistry()[process_id]
         
-        if isinstance(response_details, Exception):
-            raise ThreadDiedBeforeCompletionError(response_details)
+        completed = None
+        try:
+            completed = self.completed(process_id)
+        except ThreadDiedBeforeCompletionError:
+            completed = 100
+            raise
+        finally:
+            if completed is True or completed == 100:
+                del getProcessRegistry(self.context)[process_id]
         
         if response_details:
             response = self.request.response
