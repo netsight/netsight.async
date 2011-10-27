@@ -89,41 +89,42 @@ def process_wrapper(pid, request_body, request_environ):
     
     # Run
     try:
-        response = publish(request, 'Zope2', [None], mapply=my_mapply)
-        
-        # We can't just pass the response back, as the data streams will not
-        # be set up right.
-        attr = (hasattr(response, 'cookies') and 'cookies') or \
-               (hasattr(response, '_cookies') and '_cookies')
-        cookies = deepcopy(getattr(response, attr))
-        
-        if IHTTPResponse.providedBy(response):
-            _process['result'] = (response.getStatus(),
-                                  dict(response.getHeaders()),
-                                  cookies,
-                                  response.consumeBody())
-        else:
-            # Currently, ZPublisher.HTTPResponse doesn't implement
-            # IHTTPResponse, even though HTTPRequest implements
-            # IHTTPRequest.
-            _process['result'] = (response.getStatus(),
-                                  dict(response.headers),
-                                  cookies,
-                                  response.body)
+        try:
+            response = publish(request, 'Zope2', [None], mapply=my_mapply)
             
-    except Exception, e:
-        # Set result to the exception raised
-        _process['result'] = e
-        raise
-    else:
-        # Set completed
-        completed = _process.get('completed')
-        if is_numeric(completed):
-            completed = 100
+            # We can't just pass the response back, as the data streams will not
+            # be set up right.
+            attr = (hasattr(response, 'cookies') and 'cookies') or \
+                   (hasattr(response, '_cookies') and '_cookies')
+            cookies = deepcopy(getattr(response, attr))
+            
+            if IHTTPResponse.providedBy(response):
+                _process['result'] = (response.getStatus(),
+                                      dict(response.getHeaders()),
+                                      cookies,
+                                      response.consumeBody())
+            else:
+                # Currently, ZPublisher.HTTPResponse doesn't implement
+                # IHTTPResponse, even though HTTPRequest implements
+                # IHTTPRequest.
+                _process['result'] = (response.getStatus(),
+                                      dict(response.headers),
+                                      cookies,
+                                      response.body)
+                
+        except Exception, e:
+            # Set result to the exception raised
+            _process['result'] = e
+            raise
         else:
-            completed = True
-        _process['completed'] = completed
-        transaction.commit()
+            # Set completed
+            completed = _process.get('completed')
+            if is_numeric(completed):
+                completed = 100
+            else:
+                completed = True
+            _process['completed'] = completed
+            transaction.commit()
     finally:
         # Clean up our extra thread.
         request.close()
@@ -284,10 +285,11 @@ class BaseAsyncView(BrowserView):
         
         completed = None
         try:
-            completed = self.completed(process_id)
-        except ThreadDiedBeforeCompletionError:
-            completed = 100
-            raise
+            try:
+                completed = self.completed(process_id)
+            except ThreadDiedBeforeCompletionError:
+                completed = 100
+                raise
         finally:
             if completed is True or completed == 100:
                 del getProcessRegistry(self.context)[process_id]
