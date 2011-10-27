@@ -118,12 +118,13 @@ def process_wrapper(pid, request_body, request_environ):
             raise
         else:
             # Set completed
-            completed = _process.get('completed')
-            if is_numeric(completed):
-                completed = 100
+            progress = _process.get('progress')
+            if is_numeric(progress):
+                progress = 100
             else:
-                completed = True
-            _process['completed'] = completed
+                progress = True
+            _process['progress'] = progress
+            _process['completed'] = True
             transaction.commit()
     finally:
         # Clean up our extra thread.
@@ -182,8 +183,9 @@ class BaseAsyncView(BrowserView):
         # naughty but necessary for now.
         t = threading.Thread(target=process_wrapper, name=name, kwargs=setup)
         
-        getProcessRegistry(self.context)[process_id] = PersistentDict({'completed': False,
-                                                                       'result': None})
+        getProcessRegistry(self.context)[process_id] = PersistentDict({'progress': False,
+                                                                       'result': None,
+                                                                       'completed': False})
         # Ensure we have committed in this thread before the spawned
         # thread tries to retrieve the process record.
         transaction.commit()
@@ -212,17 +214,20 @@ class BaseAsyncView(BrowserView):
         # process as a number between 0 and 100.
         
         process = self._get_process(process_id)
-        process['completed'] = round(percentage, 1)
-        if process['completed'] % 1 == 0:
-            process['completed'] = int(process['completed'])
+        process['progress'] = round(percentage, 1)
+        if process['progress'] % 1 == 0:
+            process['progress'] = int(process['progress'])
     
     def processing(self, process_id):
         """ If the process is completed, redirects to the completed
             result. Otherwise shows the processing page.
         """
-        completed = self.completed(process_id)
+        # Throw our thread died before completion error if there is one
+        self.completed(process_id)
         
-        if completed is True or completed==100:
+        process = self._get_process(process_id)
+        
+        if process['completed']:
             completed_uri = '%s/%s/result?process_id=%s' % \
                             (self.context.absolute_url(),
                              self.__name__,
@@ -249,20 +254,20 @@ class BaseAsyncView(BrowserView):
             else:
                 raise
             
-        completed = process.get('completed', None)
+        progress = process.get('progress', None)
+        completed = process.get('completed', False)
         result = process.get('result')
         if isinstance(result, Exception) and \
-           completed is not True and \
-           completed != 100:
+           completed is not True:
             exception = result
             if not output_json:
                 del getProcessRegistry(self.context)[process_id]
                 raise ThreadDiedBeforeCompletionError(exception)
             else:
-                return json.dumps({'completed': 'ERROR'})
+                return json.dumps({'progress': 'ERROR'})
         
         if not output_json:
-            return completed
+            return progress
         else:
             if hasattr(self.context, 'portal_languages'):
                 lang = self.context.portal_languages.getPreferredLanguage()
@@ -270,8 +275,8 @@ class BaseAsyncView(BrowserView):
                 lang = 'en' 
             progress_message = _(u'percentage_completion',
                                  u'${percentage}% completed...',
-                                 mapping={'percentage': completed or 0})
-            return json.dumps({'completed': completed,
+                                 mapping={'percentage': progress or 0})
+            return json.dumps({'progress': progress,
                                'progress_message': translate(progress_message,
                                                              target_language=lang)})
     
@@ -280,22 +285,23 @@ class BaseAsyncView(BrowserView):
             completed, returns None. Once the result has been
             successfully fetched, it cannot be fetched again.
         """
-        process = self._get_process(process_id)
-        response_details = process.get('result')
         
-        completed = None
+        completed = False
         try:
             try:
-                completed = self.completed(process_id)
+                process = self._get_process(process_id)
+                completed = process['completed']
             except ThreadDiedBeforeCompletionError:
-                completed = 100
+                completed = True
                 raise
         finally:
-            if completed is True or completed == 100:
+            if completed is True:
                 del getProcessRegistry(self.context)[process_id]
         
-        if response_details:
+        if completed:
             response = self.request.response
+                
+            response_details = process.get('result')
             
             status, headers, cookies, body = response_details
             response.setStatus(status)

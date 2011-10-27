@@ -9,11 +9,11 @@
 			    	if (textStatus!=='success') {
 			    		return;
 			    	}
-			    	if (data['completed']===true ||
-			    		data['completed']===100 ||
-			    		data['completed']==='ERROR') {
+			    	if (data['progress']===true ||
+			    		data['progress']===100 ||
+			    		data['progress']==='ERROR') {
 			    		window.location.href = resultURI;
-			    	} else if (data['completed']===false) {
+			    	} else if (data['progress']===false) {
 			    		// nothing to do
 			    	} else {
 			    		// update progress
