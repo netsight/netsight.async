@@ -12,6 +12,8 @@ of the request is returned to the browser.
 Usage
 =====
 
+Examples of usage can be found at https://github.com/netsight/netsight.async_examples
+
 Basic
 -----
 
