@@ -164,13 +164,10 @@ Installation
 ============
 
 Simply add ``netsight.async`` to the ``eggs`` section of your buildout
-configuration. If you also plan on using the stock 'processing' page,
-you may also need to add it to the ``zcml`` section. ::
+configuration.::
 
   [buildout]
   eggs = ...
-         netsight.async
-  zcml = ...
          netsight.async
 
 Limitations
@@ -191,9 +188,6 @@ may be required.
 
 To be improved
 ==============
-
-Currently processes are stored in memory of a particular Python
-instance. This introduces the following issues:
 
  * If the user never retrieves the results from the ``__run__``
    method, they are stored in the ZODB permanently.
