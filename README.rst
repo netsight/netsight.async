@@ -170,6 +170,8 @@ configuration.::
   eggs = ...
          netsight.async
 
+You will also need to install ``Netsight Asynchronous Tools`` via the Plone Control Panel.
+
 Limitations
 ===========
 
