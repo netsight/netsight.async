@@ -19,17 +19,28 @@ Basic
 
 First, subclass the ``BaseAsyncView`` class. Where you might ordinarily
 write code in the ``__call__`` method of a view class, to perform some
-process, instead, place it in the ``__run__`` method. ::
+process, instead, place it in the ``__run__`` method.
 
-    >>> import time
-    >>> from netsight.async.browser.BaseAsyncView import BaseAsyncView
-    >>> class MyView(BaseAsyncView):
-    ...    
-    ...    def __run__(self, *args, **kwargs):
-    ...         time.sleep(30)
-    ...         return "Hello world!"
-    ...
-    >>>
+.. code-block:: python
+
+    import time
+    from netsight.async.browser.BaseAsyncView import BaseAsyncView
+    class MyView(BaseAsyncView):
+       
+        def __run__(self, *args, **kwargs):
+            time.sleep(30)
+            return "Hello world!"
+
+You will also need to allow the ``processing``, ``result`` and ``completed`` attributes when you register the view.
+
+.. code-block:: xml
+
+    <browser:view
+        for="*"
+        name="myview"
+        class=".views.MyView"
+        allowed_attributes="processing result completed"
+        />
     
 When you call this view from the browser, it will display whatever
 output is configured as normal. When you perform a POST request to the
